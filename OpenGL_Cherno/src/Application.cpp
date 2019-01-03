@@ -126,35 +126,58 @@ int main() {
   }
 
   /* Let's make a triangle, and then squares.*/
-  float triangle_positions[12] = {
+  float object0_positions[8] = {
     -0.5f, -0.5f,
-    0.5f, -0.5f,
-    0.5f, 0.5f,
+    -0.1f, -0.5f,
+    -0.1f, 0.5f,
     -0.5f, 0.5f,
   };
 
-  int indices[] = {
+  float object1_positions[6] = {
+    //0.1f, -0.5f,
+    0.5f, -0.5f,
+    0.5f, 0.5f,
+    0.1f, 0.5f,
+  };
+
+  int indices0[] = {
     0, 1, 2,
     2, 3, 0
   };
 
-  unsigned int vao;
-  GLCall(glGenVertexArrays(1, &vao));
-  GLCall(glBindVertexArray(vao));
+  int indices1[] = {
+    /*0, 1, 2,
+    2, 3, 0*/
+    0, 1, 2, 0
+  };
+
+  unsigned int vaos[2];
+  GLCall(glGenVertexArrays(2, vaos));
+  GLCall(glBindVertexArray(vaos[0]));
   // make an vertex buffer
-  GLuint buffer;
-  GLCall(glGenBuffers(1, &buffer));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-  GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), triangle_positions, GL_STATIC_DRAW));
+  GLuint vbos[2];
+  GLCall(glGenBuffers(2, vbos));
+  GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[0]));
+  GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), object0_positions, GL_STATIC_DRAW));
 
   GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
   GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
 
   // make an index buffer
-  GLuint ibo; // index buffer object.
-  GLCall(glGenBuffers(1, &ibo));
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
+  GLuint ibos[2]; // index buffer object.
+  GLCall(glGenBuffers(2, ibos));
+  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[0]));
+  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices0, GL_STATIC_DRAW));
+
+  GLCall(glBindVertexArray(vaos[1]));
+  GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[1]));
+  GLCall(glBufferData(GL_ARRAY_BUFFER, 3 * 2 * sizeof(float), object1_positions, GL_STATIC_DRAW));
+
+  GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
+  GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
+
+  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[1]));
+  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(unsigned int), indices1, GL_STATIC_DRAW));
 
   ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
   unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
@@ -180,8 +203,8 @@ int main() {
     GLCall(glUseProgram(shader));
     GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
 
-    GLCall(glBindVertexArray(vao));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+    GLCall(glBindVertexArray(vaos[0]));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[0]));
 
     GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
 
@@ -190,6 +213,11 @@ int main() {
     } else if (red_color < 0.0f) {
       increment = 0.05f;
     }
+
+    GLCall(glBindVertexArray(vaos[1]));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[1]));
+
+    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
 
     red_color += increment;
 
