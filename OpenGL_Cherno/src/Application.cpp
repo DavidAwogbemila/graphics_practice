@@ -117,6 +117,7 @@ int main() {
   /* Adjust frame rate. */
   glfwSwapInterval(1);
 
+  std::cout << "This is the master branch" << std::endl;
   if (glewInit() != GLEW_OK) {
     std::cout << "Glew not ok" << std::endl;
   } else {
