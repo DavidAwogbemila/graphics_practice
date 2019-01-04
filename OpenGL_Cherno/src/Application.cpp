@@ -6,22 +6,9 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-  x;\
-  ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-static void GLClearError() {
-  while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line) {
-  while (GLenum error = glGetError()) {
-    std::cout << "[OpenGL Error] (" << error << ") " << function << " " << file << " " << line << std::endl;
-    return false;
-  }
-  return true;
-}
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 struct ShaderProgramSource {
   std::string VertexSoure;
@@ -105,7 +92,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   /* Create a windowed mode window and its OpenGL context */
-  window = glfwCreateWindow(640, 480, "Hello Regular World", NULL, NULL);
+  window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -124,83 +111,79 @@ int main() {
     std::cout << "Glew ok!" << std::endl;
     std::cout << "Our OpenGL version is: " << glGetString(GL_VERSION) << std::endl;
   }
+  {
+    /* Let's make a triangle, and then squares.*/
+    float triangle_positions[8] = {
+      -0.5f, -0.5f,
+      0.5f, -0.5f,
+      0.5f, 0.5f,
+      -0.5f, 0.5f,
+    };
 
-  /* Let's make a triangle, and then squares.*/
-  float triangle_positions[12] = {
-    -0.5f, -0.5f,
-    0.5f, -0.5f,
-    0.5f, 0.5f,
-    -0.5f, 0.5f,
-  };
+    unsigned int indices[] = {
+      0, 1, 2,
+      2, 3, 0
+    };
 
-  int indices[] = {
-    0, 1, 2,
-    2, 3, 0
-  };
-
-  unsigned int vao;
-  GLCall(glGenVertexArrays(1, &vao));
-  GLCall(glBindVertexArray(vao));
-  // make an vertex buffer
-  GLuint buffer;
-  GLCall(glGenBuffers(1, &buffer));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-  GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), triangle_positions, GL_STATIC_DRAW));
-
-  GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
-  GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
-
-  // make an index buffer
-  GLuint ibo; // index buffer object.
-  GLCall(glGenBuffers(1, &ibo));
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
-
-  ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
-  unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
-  GLCall(glUseProgram(shader));
-
-  GLCall(int location = glGetUniformLocation(shader, "u_color"));
-  ASSERT(location != -1);
-  GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
-
-  /* Here if we deselect all the buffer ans shaders.*/
-  GLCall(glBindVertexArray(0));
-  GLCall(glUseProgram(0));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-
-  float red_color = 0.0f;
-  float increment = 0.05f;
-  /* Loop until the user closes the window */
-  while (!glfwWindowShouldClose(window)) {
-    /* Render here */
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    GLCall(glUseProgram(shader));
-    GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
-
+    unsigned int vao;
+    GLCall(glGenVertexArrays(1, &vao));
     GLCall(glBindVertexArray(vao));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
 
-    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
+    // make an vertex buffer
+    VertexBuffer vb(triangle_positions, 4 * 2 * sizeof(float));
 
-    if (red_color > 1.0f) {
-      increment = -0.05f;
-    } else if (red_color < 0.0f) {
-      increment = 0.05f;
+    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
+    GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
+
+    // make an index buffer
+    IndexBuffer ib(indices, 6);
+
+    ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
+    unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
+    GLCall(glUseProgram(shader));
+
+    GLCall(int location = glGetUniformLocation(shader, "u_color"));
+    ASSERT(location != -1);
+    GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
+
+    /* Here if we deselect all the buffer ans shaders.*/
+    GLCall(glBindVertexArray(0));
+    GLCall(glUseProgram(0));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+    float red_color = 0.0f;
+    float increment = 0.05f;
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window)) {
+      /* Render here */
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      GLCall(glUseProgram(shader));
+      GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
+
+      GLCall(glBindVertexArray(vao));
+      vb.Bind();
+      ib.Bind();
+      GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
+
+      if (red_color > 1.0f) {
+        increment = -0.05f;
+      } else if (red_color < 0.0f) {
+        increment = 0.05f;
+      }
+
+      red_color += increment;
+
+      /* Swap front and back buffers */
+      glfwSwapBuffers(window);
+
+      /* Poll for and process events */
+      glfwPollEvents();
     }
 
-    red_color += increment;
-
-    /* Swap front and back buffers */
-    glfwSwapBuffers(window);
-
-    /* Poll for and process events */
-    glfwPollEvents();
+    GLCall(glDeleteProgram(shader););
   }
-
-  glDeleteProgram(shader);
   glfwTerminate();
   return 0;
 }
