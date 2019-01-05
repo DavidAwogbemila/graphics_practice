@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
 
 struct ShaderProgramSource {
   std::string VertexSoure;
@@ -109,7 +110,7 @@ int main() {
     std::cout << "Glew not ok" << std::endl;
   } else {
     std::cout << "Glew ok!" << std::endl;
-    std::cout << "Our OpenGL version is: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "On this run the OpenGL version is: " << glGetString(GL_VERSION) << std::endl;
   }
   {
     /* Let's make a triangle, and then squares.*/
@@ -120,24 +121,21 @@ int main() {
       -0.5f, 0.5f,
     };
 
-    unsigned int indices[] = {
-      0, 1, 2,
-      2, 3, 0
-    };
+    //unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
+    unsigned int indices[] = { 2, 3, 0, 0, 1, 2 };
 
-    unsigned int vao;
-    GLCall(glGenVertexArrays(1, &vao));
-    GLCall(glBindVertexArray(vao));
-
+    // make an vertex array
+    VertexArray va;
     // make an vertex buffer
     VertexBuffer vb(triangle_positions, 4 * 2 * sizeof(float));
-
-    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
-    GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
+    VertexBufferLayout layout;
+    layout.Push<float>(2);
+    va.AddBuffer(vb, layout);
 
     // make an index buffer
     IndexBuffer ib(indices, 6);
 
+    // make a shader
     ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
     unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
     GLCall(glUseProgram(shader));
@@ -145,12 +143,6 @@ int main() {
     GLCall(int location = glGetUniformLocation(shader, "u_color"));
     ASSERT(location != -1);
     GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
-
-    /* Here if we deselect all the buffer ans shaders.*/
-    GLCall(glBindVertexArray(0));
-    GLCall(glUseProgram(0));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
     float red_color = 0.0f;
     float increment = 0.05f;
@@ -162,7 +154,7 @@ int main() {
       GLCall(glUseProgram(shader));
       GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
 
-      GLCall(glBindVertexArray(vao));
+      va.Bind();
       vb.Bind();
       ib.Bind();
       GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
@@ -181,7 +173,6 @@ int main() {
       /* Poll for and process events */
       glfwPollEvents();
     }
-
     GLCall(glDeleteProgram(shader););
   }
   glfwTerminate();
