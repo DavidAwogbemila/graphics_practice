@@ -6,22 +6,11 @@
 #include <string>
 #include <sstream>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-  x;\
-  ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-static void GLClearError() {
-  while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line) {
-  while (GLenum error = glGetError()) {
-    std::cout << "[OpenGL Error] (" << error << ") " << function << " " << file << " " << line << std::endl;
-    return false;
-  }
-  return true;
-}
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include "VertexArray.h"
+#include "VertexBufferLayout_impl.h"
 
 struct ShaderProgramSource {
   std::string VertexSoure;
@@ -125,110 +114,96 @@ int main() {
     std::cout << "Our OpenGL version is: " << glGetString(GL_VERSION) << std::endl;
   }
 
-  /* Let's make a triangle, and then squares.*/
-  float object0_positions[8] = {
-    -0.5f, -0.5f,
-    -0.1f, -0.5f,
-    -0.1f, 0.5f,
-    -0.5f, 0.5f,
-  };
+  { // We use this namespace to cause the destructors of
+    // the classes to be called before glfwTerminate is called.
+    /* Let's make 2 shapes, a rectangle and a triangle. */
+    float object0_positions[8] = {
+      -0.5f, -0.5f,
+      -0.1f, -0.5f,
+      -0.1f, 0.5f,
+      -0.5f, 0.5f,
+    };
 
-  float object1_positions[6] = {
-    //0.1f, -0.5f,
-    0.5f, -0.5f,
-    0.5f, 0.5f,
-    0.1f, 0.5f,
-  };
+    float object1_positions[6] = {
+      //0.1f, -0.5f,
+      0.5f, -0.5f,
+      0.5f, 0.5f,
+      0.1f, 0.5f,
+    };
 
-  int indices0[] = {
-    0, 1, 2,
-    2, 3, 0
-  };
+    int indices0[] = {
+      0, 1, 2,
+      2, 3, 0
+    };
 
-  int indices1[] = {
-    /*0, 1, 2,
-    2, 3, 0*/
-    0, 1, 2, 0
-  };
+    int indices1[] = {
+      0, 1, 2
+    };
 
-  unsigned int vaos[2];
-  GLCall(glGenVertexArrays(2, vaos));
-  GLCall(glBindVertexArray(vaos[0]));
-  // make an vertex buffer
-  GLuint vbos[2];
-  GLCall(glGenBuffers(2, vbos));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[0]));
-  GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), object0_positions, GL_STATIC_DRAW));
+    // make vertex buffers for the desired objects.
+    VertexArray va0;
+    VertexBufferLayout layout0;
+    VertexBuffer vb0(object0_positions, 4 * 2 * sizeof(float));
+    IndexBuffer ib0(indices0, 6);
 
-  GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
-  GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
+    vb0.Bind();
+    layout0.Push<float>(2);
+    va0.AddBuffer(vb0, layout0);
 
-  // make an index buffer
-  GLuint ibos[2]; // index buffer object.
-  GLCall(glGenBuffers(2, ibos));
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[0]));
-  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices0, GL_STATIC_DRAW));
+    VertexArray va1;
+    VertexBufferLayout layout1;
+    VertexBuffer vb1(object1_positions, 3 * 2 * sizeof(float));
+    IndexBuffer ib1(indices1, 3);
 
-  GLCall(glBindVertexArray(vaos[1]));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[1]));
-  GLCall(glBufferData(GL_ARRAY_BUFFER, 3 * 2 * sizeof(float), object1_positions, GL_STATIC_DRAW));
+    vb1.Bind();
+    layout1.Push<float>(2);
+    va1.AddBuffer(vb1, layout1);
 
-  GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));  /* I believe we do this combination*/
-  GLCall(glEnableVertexAttribArray(0));                                                        /* for each vertex attribute.      */
-
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[1]));
-  GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(unsigned int), indices1, GL_STATIC_DRAW));
-
-  ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
-  unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
-  GLCall(glUseProgram(shader));
-
-  GLCall(int location = glGetUniformLocation(shader, "u_color"));
-  ASSERT(location != -1);
-  GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
-
-  /* Here if we deselect all the buffer ans shaders.*/
-  GLCall(glBindVertexArray(0));
-  GLCall(glUseProgram(0));
-  GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-
-  float red_color = 0.0f;
-  float increment = 0.05f;
-  /* Loop until the user closes the window */
-  while (!glfwWindowShouldClose(window)) {
-    /* Render here */
-    glClear(GL_COLOR_BUFFER_BIT);
-
+    ShaderProgramSource source = ParseShader("res/shader/Basic.shader");
+    unsigned int shader = createShader(source.VertexSoure, source.FragmentSource);
     GLCall(glUseProgram(shader));
-    GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
 
-    GLCall(glBindVertexArray(vaos[0]));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[0]));
+    GLCall(int location = glGetUniformLocation(shader, "u_color"));
+    ASSERT(location != -1);
+    GLCall(glUniform4f(location, 0.8f, 0.3f, 0.8f, 1.0f));
 
-    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
+    float red_color = 0.0f;
+    float increment = 0.05f;
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window)) {
+      /* Render here */
+      glClear(GL_COLOR_BUFFER_BIT);
 
-    if (red_color > 1.0f) {
-      increment = -0.05f;
-    } else if (red_color < 0.0f) {
-      increment = 0.05f;
+      GLCall(glUseProgram(shader));
+      GLCall(glUniform4f(location, red_color, 0.3f, 0.8f, 1.0f));
+
+      va0.Bind();
+      vb0.Bind();
+      ib0.Bind();
+      GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
+
+      if (red_color > 1.0f) {
+        increment = -0.05f;
+      } else if (red_color < 0.0f) {
+        increment = 0.05f;
+      }
+
+      va1.Bind();
+      vb1.Bind();
+      ib1.Bind();
+      GLCall(glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
+
+      red_color += increment;
+
+      /* Swap front and back buffers */
+      glfwSwapBuffers(window);
+
+      /* Poll for and process events */
+      glfwPollEvents();
     }
 
-    GLCall(glBindVertexArray(vaos[1]));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, vbos[1]));
-
-    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); //we can put nullptr because we have bound our ibo earlier.
-
-    red_color += increment;
-
-    /* Swap front and back buffers */
-    glfwSwapBuffers(window);
-
-    /* Poll for and process events */
-    glfwPollEvents();
+    glDeleteProgram(shader);
   }
-
-  glDeleteProgram(shader);
   glfwTerminate();
   return 0;
 }
