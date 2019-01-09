@@ -2,8 +2,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "Renderer.h"
-
 struct ShaderProgramSource {
   std::string VertexSoure;
   std::string FragmentSource;

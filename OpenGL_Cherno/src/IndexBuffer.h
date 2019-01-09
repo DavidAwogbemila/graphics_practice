@@ -3,7 +3,7 @@
 class IndexBuffer {
 private:
   unsigned int m_RendererID;
-  unsigned int m_count;
+  unsigned int m_Count;
 
 public:
   IndexBuffer(const unsigned int* data, const unsigned int count);
@@ -12,5 +12,5 @@ public:
   void Bind() const;
   void UnBind() const;
 
-  inline unsigned int GetCount() { return m_count; }
+  inline unsigned int GetCount() const { return m_Count; }
 };
