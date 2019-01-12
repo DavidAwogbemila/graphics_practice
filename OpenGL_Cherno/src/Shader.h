@@ -14,7 +14,7 @@ private:
   ShaderProgramSource ParseShader(const std::string&  file_path);
   unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
   unsigned int compileShader(unsigned int type, const std::string& source);
-  unsigned int GetUniformLocation(const std::string& name);
+  int GetUniformLocation(const std::string& name);
   //caching for uniforms
   std::unordered_map<std::string, int> m_UniformLocationCache;
 
@@ -27,5 +27,6 @@ public:
 
   // Get and set uniforms.
   void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
+  void SetUniform1i(const std::string& name, int value);
   //unsigned int GetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 };
