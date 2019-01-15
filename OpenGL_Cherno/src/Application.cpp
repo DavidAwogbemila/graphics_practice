@@ -53,8 +53,8 @@ int main() {
       -0.5f, 0.5f, 0.0f, 1.0f
     };
 
-    //GLCall(glEnable(GL_BLEND));
-    //GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ));
+    GLCall(glEnable(GL_BLEND));
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ));
 
     unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
@@ -69,7 +69,6 @@ int main() {
 
     Shader shader("res/shader/Basic.shader");
     shader.Bind();
-    //shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
 
     Texture texture("res/textures/wall.jpg");
     texture.Bind(0);
@@ -89,7 +88,6 @@ int main() {
       renderer.Clear();
 
       shader.Bind();
-      //shader.SetUniform4f("u_Color", red_color, 0.3f, 0.8f, 1.0f);
       renderer.Draw(va, ib, shader);
 
       if (red_color > 1.0f) {
