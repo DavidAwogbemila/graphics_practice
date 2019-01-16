@@ -1,6 +1,5 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -15,7 +14,6 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "Application.h"
 
 int main() {
   GLFWwindow* window;
@@ -29,7 +27,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   /* Create a windowed mode window and its OpenGL context */
-  window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+  window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -51,10 +49,10 @@ int main() {
   {
     /* Let's make a triangle, and then squares.*/
     float triangle_positions[16] = {
-      -0.5f, -0.5f, 0.0f, 0.0f,
-      0.5f, -0.5f, 1.0f, 0.0f,
-      0.5f, 0.5f, 1.0f, 1.0f,
-      -0.5f, 0.5f, 0.0f, 1.0f
+      300.0f, 300.0f, 0.0f, 0.0f,
+      400.0f, 300.0f, 1.0f, 0.0f,
+      400.0f, 400.0f, 1.0f, 1.0f,
+      300.0f, 400.0f, 0.0f, 1.0f
     };
 
     GLCall(glEnable(GL_BLEND));
@@ -71,7 +69,11 @@ int main() {
 
     IndexBuffer ib(indices, 6);
 
-    glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+    glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(100, 0, 0));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, -150, 0));
+
+    glm::mat4 mvp = proj * view * model;
 
     Shader shader("res/shader/Basic.shader");
     shader.Bind();
@@ -79,7 +81,7 @@ int main() {
     Texture texture("res/textures/wall.jpg");
     texture.Bind(0);
     shader.SetUniform1i("u_Texture", 0);
-    shader.SetUniformMat4f("u_MVP", proj);
+    shader.SetUniformMat4f("u_MVP", mvp);
 
     va.UnBind();
     vb.UnBind();
