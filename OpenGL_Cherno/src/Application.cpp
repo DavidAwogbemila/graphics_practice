@@ -14,6 +14,8 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw_gl3.h"
 
 int main() {
   GLFWwindow* window;
@@ -27,7 +29,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   /* Create a windowed mode window and its OpenGL context */
-  window = glfwCreateWindow(960, 540, "Hello World", NULL, NULL);
+  window = glfwCreateWindow(960, 960, "Hello World", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -44,15 +46,16 @@ int main() {
     std::cout << "Glew not ok" << std::endl;
   } else {
     std::cout << "Glew ok!" << std::endl;
-    std::cout << "On this run the OpenGL version is: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "On this run the OpenGL version is: " <<
+      glGetString(GL_VERSION) << std::endl;
   }
   {
     /* Let's make a triangle, and then squares.*/
     float triangle_positions[16] = {
-      300.0f, 300.0f, 0.0f, 0.0f,
-      400.0f, 300.0f, 1.0f, 0.0f,
-      400.0f, 400.0f, 1.0f, 1.0f,
-      300.0f, 400.0f, 0.0f, 1.0f
+      -50.0f, -50.0f, 0.0f, 0.0f,
+      50.0f, -50.0f, 1.0f, 0.0f,
+      50.0f, 50.0f, 1.0f, 1.0f,
+      -50.0f, 50.0f, 0.0f, 1.0f
     };
 
     GLCall(glEnable(GL_BLEND));
@@ -69,10 +72,10 @@ int main() {
 
     IndexBuffer ib(indices, 6);
 
-    glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(100, 0, 0));
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, -150, 0));
-
+    glm::mat4 proj = glm::ortho(-480.0f, 480.0f, -480.0f, 480.0f, -1.0f, 1.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+    
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
     glm::mat4 mvp = proj * view * model;
 
     Shader shader("res/shader/Basic.shader");
@@ -89,23 +92,48 @@ int main() {
     shader.UnBind();
 
     Renderer renderer;
-    float red_color = 0.0f;
-    float increment = 0.05f;
+
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui_ImplGlfwGL3_Init(window, true);
+    ImGui::StyleColorsDark();
+
+    glm::vec3 translationA(-100, 0, 0);
+    glm::vec3 translationB(100, 0, 0);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
       /* Render here */
       renderer.Clear();
 
-      shader.Bind();
-      renderer.Draw(va, ib, shader);
-
-      if (red_color > 1.0f) {
-        increment = -0.05f;
-      } else if (red_color < 0.0f) {
-        increment = 0.05f;
+      ImGui_ImplGlfwGL3_NewFrame();
+  
+      {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
+        glm::mat4 mvp = proj * view * model;
+        shader.Bind();
+        shader.SetUniformMat4f("u_MVP", mvp);
+        renderer.Draw(va, ib, shader);
       }
 
-      red_color += increment;
+      {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
+        glm::mat4 mvp = proj * view * model;
+        shader.Bind();
+        shader.SetUniformMat4f("u_MVP", mvp);
+        renderer.Draw(va, ib, shader);
+      }
+
+      {
+        ImGui::SliderFloat3("floatA", &translationA.x, 0.0f, 960.0f);
+        ImGui::SliderFloat3("floatB", &translationB.x, 0.0f, 960.0f);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+          1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      }
+
+      ImGui::Render();
+      ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
       /* Swap front and back buffers */
       glfwSwapBuffers(window);
@@ -114,6 +142,9 @@ int main() {
       glfwPollEvents();
     }
   }
+
+  ImGui_ImplGlfwGL3_Shutdown();
+  ImGui::DestroyContext();
   glfwTerminate();
   return 0;
 }
