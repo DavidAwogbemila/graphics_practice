@@ -18,6 +18,7 @@
 #include "imgui/imgui_impl_glfw_gl3.h"
 
 #include "tests/TestClearColor.h"
+#include "tests/TestTextures.h"
 
 int main() {
   GLFWwindow* window;
@@ -53,37 +54,81 @@ int main() {
 
   {
     GLCall(glEnable(GL_BLEND));
-    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ));
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    Renderer renderer;
+    {
+      /* Let's make a triangle, and then squares.*/
+      float triangle_positions[16] = {
+        -50.0f, -50.0f, 0.0f, 0.0f,
+        50.0f, -50.0f, 1.0f, 0.0f,
+        50.0f, 50.0f, 1.0f, 1.0f,
+        -50.0f, 50.0f, 0.0f, 1.0f
+      };
 
-    ImGui::CreateContext();
+      GLCall(glEnable(GL_BLEND));
+      GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    ImGui_ImplGlfwGL3_Init(window, true);
-    ImGui::StyleColorsDark();
+      unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
-    test::TestClearColor test;
+      VertexArray va;
+      VertexBuffer vb(triangle_positions, 4 * 4 * sizeof(float));
+      VertexBufferLayout layout;
+      layout.Push<float>(2);
+      layout.Push<float>(2);
+      va.AddBuffer(vb, layout);
 
-    while (!glfwWindowShouldClose(window)) {
-      renderer.Clear();
+      IndexBuffer ib(indices, 6);
 
-      test.OnUpdate(0.0f);
-      test.OnRender();
+      glm::mat4 proj = glm::ortho(-480.0f, 480.0f, -480.0f, 480.0f, -1.0f, 1.0f);
+      glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
-      ImGui_ImplGlfwGL3_NewFrame();
-      test.OnImguiRender();
+      glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+      glm::mat4 mvp = proj * view * model;
 
-      ImGui::Render();
-      ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+      Shader shader("res/shader/Basic.shader");
+      shader.Bind();
 
-      glfwSwapBuffers(window);
+      Renderer renderer;
 
-      glfwPollEvents();
+      ImGui::CreateContext();
+
+      ImGui_ImplGlfwGL3_Init(window, true);
+      ImGui::StyleColorsDark();
+
+      test::TestClearColor test;
+      test::TestTextures testTextures;
+
+      while (!glfwWindowShouldClose(window)) {
+        renderer.Clear();
+
+        test.OnUpdate(0.0f);
+        test.OnRender();
+
+        testTextures.OnUpdate(0.0f);
+        testTextures.OnRender();
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,0));
+        glm::mat4 mvp = proj * view * model;
+        shader.Bind();
+        shader.SetUniformMat4f("u_MVP", mvp);
+        renderer.Draw(va, ib, shader);
+
+        ImGui_ImplGlfwGL3_NewFrame();
+        test.OnImguiRender();
+        testTextures.OnImguiRender();
+
+        ImGui::Render();
+        ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
+
+        glfwPollEvents();
+      }
     }
-  }
 
-  ImGui_ImplGlfwGL3_Shutdown();
-  ImGui::DestroyContext();
-  glfwTerminate();
+    ImGui_ImplGlfwGL3_Shutdown();
+    ImGui::DestroyContext();
+    glfwTerminate();
+  }
   return 0;
 }

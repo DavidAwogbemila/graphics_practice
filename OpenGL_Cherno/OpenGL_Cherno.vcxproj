@@ -141,6 +141,7 @@
     <ClCompile Include="src\VertexBuffer.cpp" />
     <ClCompile Include="src\VertexArray.cpp" />
     <ClCompile Include="src\VertexBufferLayout.cpp" />
+    <ClCompile Include="src\tests\TestTextures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shader\Basic.shader" />
@@ -163,6 +164,7 @@
     <ClInclude Include="src\VertexBuffer.h" />
     <ClInclude Include="src\VertexArray.h" />
     <ClInclude Include="src\VertexBufferLayout.h" />
+    <ClInclude Include="src\tests\TestTextures.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\wall.jpg" />
