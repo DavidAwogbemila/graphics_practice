@@ -27,7 +27,7 @@ namespace test {
     }
   }
 
-  void TestTextures::OnImguiRender() {
+  void TestTextures::OnImGuiRender() {
     ImGui::Checkbox("Texture selector", &texture_1_selected);
   }
 

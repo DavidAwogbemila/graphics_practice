@@ -21,7 +21,7 @@ namespace test {
   }
 
 
-  void TestClearColor::OnImguiRender() {
+  void TestClearColor::OnImGuiRender() {
     ImGui::ColorEdit4("Clear Color", m_ClearColor);
   }
 

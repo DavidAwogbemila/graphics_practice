@@ -14,7 +14,7 @@ namespace test {
 
     void OnUpdate(float deltaTime) override;
     void OnRender() override;
-    void OnImguiRender() override;
+    void OnImGuiRender() override;
 
   private:
     bool texture_1_selected;

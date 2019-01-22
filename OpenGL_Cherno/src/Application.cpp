@@ -95,17 +95,19 @@ int main() {
       ImGui_ImplGlfwGL3_Init(window, true);
       ImGui::StyleColorsDark();
 
-      test::TestClearColor test;
-      test::TestTextures testTextures;
+      test::Test* currentTest = nullptr;
+      test::TestMenu* testMenu = new test::TestMenu(currentTest);
+      currentTest = testMenu;
+
+      testMenu->RegisterTest<test::TestClearColor>("Clear Color");
+      testMenu->RegisterTest<test::TestTextures>("Texture test");
+
+      //test::TestClearColor test;
+      //test::TestTextures testTextures;
 
       while (!glfwWindowShouldClose(window)) {
+        GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
         renderer.Clear();
-
-        test.OnUpdate(0.0f);
-        test.OnRender();
-
-        testTextures.OnUpdate(0.0f);
-        testTextures.OnRender();
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,0));
         glm::mat4 mvp = proj * view * model;
@@ -114,15 +116,30 @@ int main() {
         renderer.Draw(va, ib, shader);
 
         ImGui_ImplGlfwGL3_NewFrame();
-        test.OnImguiRender();
-        testTextures.OnImguiRender();
+        if (currentTest) {
+          currentTest->OnUpdate(0.0f);
+          currentTest->OnRender(); 
+          ImGui::Begin("Test");
 
+          if (currentTest != testMenu && ImGui::Button("-<")) {
+            delete currentTest;
+            currentTest = testMenu;
+
+          }
+
+          currentTest->OnImGuiRender();
+          ImGui::End();
+        }
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
 
         glfwPollEvents();
+      }
+      delete currentTest;
+      if (currentTest != testMenu) {
+        delete testMenu;
       }
     }
 
